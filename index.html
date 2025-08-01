@@ -104,6 +104,8 @@
             box-shadow: 0 8px 25px rgba(243, 156, 18, 0.3);
             text-transform: uppercase;
             letter-spacing: 1px;
+            cursor: pointer;
+            border: none;
         }
 
         .cta-button:hover {
@@ -426,8 +428,8 @@
                 
                 <div class="feature-card fade-in">
                     <div class="feature-icon">🎥</div>
-                    <h3>Visual Lessons</h3>
-                    <p>High-quality lessons that you can move through at your own pace, with downloadable resources and discussion guides.</p>
+                    <h3>Video Teachings</h3>
+                    <p>High-quality video lessons that you can watch at your own pace, with downloadable resources and discussion guides.</p>
                 </div>
                 
                 <div class="feature-card fade-in">
@@ -456,7 +458,7 @@
                     <span class="checkmark">✓</span>
                     <div>
                         <h3>Purpose Discovery Workbook</h3>
-                        <p>Web based exercises, reflection prompts, and biblical studies</p>
+                        <p>Downloadable PDF with exercises, reflection prompts, and biblical studies</p>
                     </div>
                 </div>
                 
@@ -504,21 +506,21 @@
                     <h3>Individual Course</h3>
                     <div class="price">$97</div>
                     <p>Complete 6-week masterclass with all digital materials and community access</p>
-                    <a href="#" class="cta-button" style="margin-top: 1rem;">Get Started</a>
+                    <button class="cta-button" style="margin-top: 1rem;" onclick="showEmailModal('individual'); return false;">Get Started</button>
                 </div>
                 
                 <div class="pricing-card featured fade-in">
                     <h3>Course + Coaching</h3>
                     <div class="price">$297</div>
-                    <p>Everything above PLUS 3 group coaching calls for guidance</p>
-                    <a href="#" class="cta-button" style="margin-top: 1rem;">Most Popular</a>
+                    <p>Everything above PLUS 3 one-on-one coaching calls for personalized guidance</p>
+                    <button class="cta-button" style="margin-top: 1rem;" onclick="showEmailModal('coaching'); return false;">Most Popular</button>
                 </div>
                 
                 <div class="pricing-card fade-in">
                     <h3>Church Group License</h3>
                     <div class="price">$497</div>
                     <p>License for up to 25 participants, plus leader's guide and group discussion materials</p>
-                    <a href="#" class="cta-button" style="margin-top: 1rem;">For Churches</a>
+                    <button class="cta-button" style="margin-top: 1rem;" onclick="alert('Please email info@calledandequipped.com for church group enrollment');">For Churches</button>
                 </div>
             </div>
         </div>
@@ -528,10 +530,10 @@
         <div class="container">
             <h2 class="fade-in">Ready to Discover Your Divine Purpose?</h2>
             <p class="fade-in">Join hundreds of Christians who have already transformed their lives through this powerful masterclass.</p>
-            <a href="#" class="cta-button fade-in">Enroll Today</a>
+            <button class="cta-button fade-in" onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'});">Enroll Today</button>
             
             <div style="margin-top: 3rem;" class="fade-in">
-                <p><strong>Questions?</strong> Email us at calledandequippedcourse@gmail.com</p>
+                <p><strong>Questions?</strong> Email us at info@calledandequipped.com</p>
             </div>
         </div>
     </section>
@@ -552,8 +554,135 @@
         </div>
     </footer>
 
+    <!-- Stripe JS -->
+    <script src="https://js.stripe.com/v3/"></script>
+
     <script>
-        // Smooth scrolling for navigation links
+        // Initialize Stripe - REPLACE WITH YOUR ACTUAL PUBLISHABLE KEY
+        const stripe = Stripe('pk_test_YOUR_STRIPE_PUBLISHABLE_KEY_HERE');
+        
+        // REPLACE WITH YOUR ACTUAL BACKEND URL
+        const BACKEND_URL = 'https://your-backend-url.com';
+
+        // Function to show email modal
+        function showEmailModal(priceType) {
+            // Create modal HTML
+            const modalHTML = `
+                <div id="emailModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                ">
+                    <div style="
+                        background: white;
+                        padding: 40px;
+                        border-radius: 20px;
+                        max-width: 400px;
+                        width: 90%;
+                        text-align: center;
+                    ">
+                        <h2 style="color: #2c3e50; margin-bottom: 20px;">Almost There!</h2>
+                        <p style="color: #666; margin-bottom: 30px;">Enter your email to secure your spot in the masterclass</p>
+                        
+                        <form id="emailForm" onsubmit="processCheckout(event, '${priceType}')">
+                            <input type="email" id="userEmail" required 
+                                placeholder="your@email.com"
+                                style="
+                                    width: 100%;
+                                    padding: 15px;
+                                    border: 2px solid #ddd;
+                                    border-radius: 10px;
+                                    font-size: 16px;
+                                    margin-bottom: 20px;
+                                ">
+                            
+                            <button type="submit" style="
+                                background: #f39c12;
+                                color: white;
+                                padding: 15px 30px;
+                                border: none;
+                                border-radius: 50px;
+                                font-size: 18px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                width: 100%;
+                            ">Continue to Checkout</button>
+                            
+                            <button type="button" onclick="closeEmailModal()" style="
+                                background: none;
+                                border: none;
+                                color: #666;
+                                margin-top: 15px;
+                                cursor: pointer;
+                                text-decoration: underline;
+                            ">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        function closeEmailModal() {
+            const modal = document.getElementById('emailModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        async function processCheckout(event, priceType) {
+            event.preventDefault();
+            
+            const email = document.getElementById('userEmail').value;
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            
+            // Show loading state
+            submitButton.textContent = 'Processing...';
+            submitButton.disabled = true;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/create-checkout-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        priceType: priceType,
+                        email: email
+                    }),
+                });
+                
+                const { sessionId } = await response.json();
+                
+                // Redirect to Stripe Checkout
+                const { error } = await stripe.redirectToCheckout({
+                    sessionId: sessionId,
+                });
+                
+                if (error) {
+                    console.error('Error:', error);
+                    alert('Something went wrong. Please try again.');
+                    submitButton.textContent = 'Continue to Checkout';
+                    submitButton.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Something went wrong. Please try again.');
+                submitButton.textContent = 'Continue to Checkout';
+                submitButton.disabled = false;
+            }
+        }
+
+        // Original smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
